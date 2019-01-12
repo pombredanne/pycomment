@@ -1,6 +1,9 @@
 import sys
 import contextlib
-from io import StringIO
+from io import (
+    StringIO,
+    BytesIO,
+)
 from pycomment import (
     transform_file,
     SEP_MARKER,
@@ -9,8 +12,17 @@ from pycomment import (
 STDOUT_HEADER_MARKER = "# -- stdout --------------------"
 
 
+class IO(StringIO):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.buffer = BytesIO()
+
+    def getvalue(self):
+        return super().getvalue() or str(self.buffer.getvalue())
+
+
 def run(sourcefile, out=sys.stdout, g=None):
-    o = StringIO()
+    o = IO()
     with contextlib.redirect_stdout(o):
         code = str(transform_file(sourcefile))
         g = g or {"__name__": "exec"}
